@@ -16,15 +16,6 @@ public class PropertyPrintingConfig<TOwner, TPropType>(PrintingConfig<TOwner> pr
         return printingConfig;
     }
 
-    public PrintingConfig<TOwner> Using(CultureInfo culture)
-    {
-        if (memberInfo == null)
-            printingConfig.AddTypeCulture<TPropType>(culture);
-        else
-            printingConfig.AddMemberCulture(memberInfo, culture);
-        return printingConfig;
-    }
-
     PrintingConfig<TOwner> IPropertyPrintingConfig<TOwner, TPropType>.ParentConfig => printingConfig;
     MemberInfo? IPropertyPrintingConfig<TOwner, TPropType>.MemberInfo => memberInfo;
 }

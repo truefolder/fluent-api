@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace ObjectPrinting.Solved;
 
@@ -17,5 +18,17 @@ public static class PropertyPrintingConfigExtensions
 
         parent.AddStringTrimming(memberInfo, maxLen);
         return parent;
+    }
+    
+    public static PrintingConfig<TOwner> Using<TOwner, TPropType>(this IPropertyPrintingConfig<TOwner, TPropType> config,
+        CultureInfo culture)
+        where TPropType : IFormattable
+    {
+        if (config.MemberInfo == null)
+            config.ParentConfig.AddTypeCulture<TPropType>(culture);
+        else
+            config.ParentConfig.AddMemberCulture(config.MemberInfo, culture);
+
+        return config.ParentConfig;
     }
 }

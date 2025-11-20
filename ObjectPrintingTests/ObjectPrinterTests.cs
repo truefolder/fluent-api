@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Text;
 using FluentAssertions;
 using ObjectPrinting.Solved;
 using ObjectPrinting.Solved.Tests;
@@ -9,6 +10,7 @@ public class ObjectPrinterTests
 {
     private Person person = new();
     private Guid guid = Guid.NewGuid();
+    private string newLine = Environment.NewLine;
     [SetUp]
     public void SetUp()
     {
@@ -28,6 +30,25 @@ public class ObjectPrinterTests
                 Name = "Jack"
             }
         };
+    }
+
+    [Test]
+    public void PrintToString_ShouldPrintExactly_WhenAllPropertiesAreSet()
+    {
+        var result = ObjectPrinter.For<Person>()
+            .PrintToString(person);
+
+        var expected = new StringBuilder();
+        expected.AppendLine("Person")
+            .AppendLine($"\tId = {person.Id}")
+            .AppendLine($"\tName = {person.Name}")
+            .AppendLine($"\tHeight = {person.Height}")
+            .AppendLine($"\tAge = {person.Age}")
+            .AppendLine($"\tMoney = {person.Money}")
+            .AppendLine("\tParent = Person")
+            .AppendLine($"\t\tId = {person.Parent.Id}"); // возможно стоит добавить больше, либо разнести их на разные тесты
+
+        result.Should().Contain(expected.ToString());
     }
     
     [Test]
@@ -339,6 +360,7 @@ public class ObjectPrinterTests
             .PrintToString(person);
         
         result.Should().Contain("Height = 190.5");
+        result.Should().Contain("Money = 1000,1");
     }
     
     [Test]
@@ -349,6 +371,7 @@ public class ObjectPrinterTests
             .PrintToString(person);
         
         result.Should().Contain("Money = 1000.1");
+        result.Should().Contain("Height = 190,5");
     }
 
     [Test]
