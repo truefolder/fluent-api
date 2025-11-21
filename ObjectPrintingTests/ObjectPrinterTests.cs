@@ -406,4 +406,16 @@ public class ObjectPrinterTests
         
         result.Should().Contain("Obj = Cyclic reference at CyclicReference");
     }
+
+    [Test]
+    public void PrintToString_ShouldNotPrintCyclicReference_WhenTwoReferencesOnClassPresent()
+    {
+        var a = new TestDto { Id = 1 };
+        var b = new TestModel { A = a, B = a };
+
+        var result = ObjectPrinter.For<TestModel>()
+            .PrintToString(b);
+        
+        result.Should().NotContain("Cyclic reference at TestDto");
+    }
 }

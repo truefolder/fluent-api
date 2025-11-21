@@ -22,21 +22,29 @@ public class Printer(PrintingSettings settings)
         if (TryPrintSimpleType(obj, type, member, sb))
             return sb.ToString();
 
+        var isRemoveNeeded = false;
+        
         if (!type.IsValueType && obj is not string)
         {
             if (!parsedObjects.Add(obj))
                 return $"Cyclic reference at {type.Name}" + Environment.NewLine;
+            isRemoveNeeded = true;
         }
 
         var indentation = new string('\t', nestingLevel + 1);
-
-        if (TryProcessDictionary(obj, type, indentation, nestingLevel, sb))
-            return sb.ToString();
-
-        if (TryProcessEnumerable(obj, type, indentation, nestingLevel, sb))
-            return sb.ToString();
-
-        return PrintComplexType(obj, type, indentation, nestingLevel);
+        var result = string.Empty;
+        
+        if (obj is IDictionary dictionary)
+            result = ProcessDictionary(dictionary, type, indentation, nestingLevel);
+        else if (obj is IEnumerable enumerable and not string)
+            result = ProcessEnumerable(enumerable, type, indentation, nestingLevel);
+        else
+            result = PrintComplexType(obj, type, indentation, nestingLevel);
+        
+        if (isRemoveNeeded)
+            parsedObjects.Remove(obj);
+        
+        return result;
     }
 
     private string PrintComplexType(object obj, Type type, string indentation, int nestingLevel)
@@ -70,41 +78,31 @@ public class Printer(PrintingSettings settings)
         return false;
     }
 
-    private bool TryProcessDictionary(object? obj, Type type, string indentation,
-        int nestingLevel, StringBuilder result)
+    private string ProcessDictionary(IDictionary dictionary, Type type, string indentation, int nestingLevel)
     {
-        if (obj is IDictionary dict)
+        var result = new StringBuilder();
+        result.AppendLine(type.Name);
+        foreach (DictionaryEntry entry in dictionary)
         {
-            result.AppendLine(type.Name);
-            foreach (DictionaryEntry entry in dict)
-            {
-                result.Append($"{indentation}Key = {PrintToString(entry.Key, nestingLevel + 1, null)}");
-                result.Append($"{indentation}Value = {PrintToString(entry.Value, nestingLevel + 1, null)}");
-            }
-
-            return true;
+            result.Append($"{indentation}Key = {PrintToString(entry.Key, nestingLevel + 1, null)}");
+            result.Append($"{indentation}Value = {PrintToString(entry.Value, nestingLevel + 1, null)}");
         }
-
-        return false;
+        return result.ToString();
     }
 
-    private bool TryProcessEnumerable(object? obj, Type type, string indentation,
-        int nestingLevel, StringBuilder result)
+    private string ProcessEnumerable(IEnumerable enumerable, Type type, string indentation, int nestingLevel)
     {
-        if (obj is IEnumerable enumerable and not string)
+        var result = new StringBuilder();
+        
+        result.AppendLine(type.Name);
+        var index = 0;
+        foreach (var item in enumerable)
         {
-            result.AppendLine(type.Name);
-            var index = 0;
-            foreach (var item in enumerable)
-            {
-                result.Append($"{indentation}[{index}] = {PrintToString(item, nestingLevel + 1, null)}");
-                index++;
-            }
-
-            return true;
+            result.Append($"{indentation}[{index}] = {PrintToString(item, nestingLevel + 1, null)}");
+            index++;
         }
-
-        return false;
+        
+        return result.ToString();
     }
 
     private bool TryPrintSimpleType(object obj, Type type, MemberInfo? memberInfo, StringBuilder result)
